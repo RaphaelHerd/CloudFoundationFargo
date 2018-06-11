@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Stelligent CloudFormation Sample Template ** This template creates one or more
+  Amazon resources. You will be billed for the AWS resources used if you create
+  a stack from this template.
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: MyApplicationDev
+    Description: A name for the environment that this cloudformation will be part of.
+                 Used to locate other resources in the same environment.
+  # IAMARN:
+  #   Type: String
+  #   Description: >-
+  #     Use the full ARN for the IAM user to grant access (ECS Role ARN) (e.g. arn:aws:iam::123456789012:user/patrick.henry)
+Resources:
+  MyRepository:
+    Type: 'AWS::ECR::Repository'
+    Properties:
+      RepositoryName: !Ref 'AWS::StackName'
+      RepositoryPolicyText:
+        Version: 2008-10-17
+        Statement:
+          - Sid: AllowPushPull
+            Effect: Allow
+            Principal:
+              AWS:
+                - Fn::ImportValue:
+                    !Join [':', [!Ref 'EnvironmentName', 'ECSRole']]
+            Action:
+              - 'ecr:GetDownloadUrlForLayer'
+              - 'ecr:BatchGetImage'
+              - 'ecr:BatchCheckLayerAvailability'
+              - 'ecr:PutImage'
+              - 'ecr:InitiateLayerUpload'
+              - 'ecr:UploadLayerPart'
+              - 'ecr:CompleteLayerUpload'
+Outputs:
+  ECSRepository:
+    Value: !Ref MyRepository
