@@ -1,0 +1,186 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+    "Description" : "This CloudFormation template deploys an Oracle standard edition database",
+    "Parameters" : {
+
+     "SubnetId": {
+        "Type": "CommaDelimitedList",
+        "Description": "Select at two subnets in your selected VPC."
+        },
+
+      "VpcId": {
+        "Type": "AWS::EC2::VPC::Id",
+        "Description": "Select a VPC that allows instances access to the Internet."
+      },
+
+      "VPCCidr" : {
+        "Description" : "The CIDR of the VPC. Is used for security group access.",
+        "Type": "String",
+        "MinLength": "9",
+        "MaxLength": "18",
+        "Default": "172.0.0.0/16",
+        "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+        "ConstraintDescription": "It must be a valid IP CIDR range of the form x.x.x.x/x. Suggest to enable access to your IP address only. Pls get your address using checkip.amazonaws.com or whatsmyip.org."
+     },
+
+      "OracleDBName": {
+        "Default": "ORCL",
+        "Description" : "Enter Oracle Database name",
+        "Type": "String",
+        "MinLength": "4",
+        "MaxLength": "64",
+        "AllowedPattern" : "[a-zA-Z][a-zA-Z0-9]*",
+        "ConstraintDescription" : "must begin with a letter and contain a minimum of 4 alphanumeric characters."
+      },
+  
+      "OracleDBUsername": {
+        "Default": "oraadmin",
+        "NoEcho": "false",
+        "Description" : "Enter database Admin username for Oracle",
+        "Type": "String",
+        "MinLength": "4",
+        "MaxLength": "16",
+        "AllowedPattern" : "[a-zA-Z][a-zA-Z0-9]*",
+        "ConstraintDescription" : "must begin with a letter and contain a minimum of 4 alphanumeric characters."
+      },
+  
+      "OracleDBPassword": {
+        "Default": "oraadmin123",
+        "NoEcho": "true",
+        "Description" : "Enter password for Oracle Admin user",
+        "Type": "String",
+        "MinLength": "8",
+        "MaxLength": "41",
+        "AllowedPattern" : "[a-zA-Z0-9]*",
+        "ConstraintDescription" : "must contain only alphanumeric characters with minimum of 8 characters."
+      },
+    
+      "ClientIP" : {
+        "Description" : "The IP address range that can be used to connect to the RDS instances from your local machine.It must be a valid IP CIDR range of the form x.x.x.x/x.Pls get your address using checkip.amazonaws.com or whatsmyip.org",
+        "Type": "String",
+        "MinLength": "9",
+        "MaxLength": "18",
+        "Default": "0.0.0.0/0",
+        "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+        "ConstraintDescription": "It must be a valid IP CIDR range of the form x.x.x.x/x. Suggest to enable access to your IP address only. Pls get your address using checkip.amazonaws.com or whatsmyip.org."
+     }
+    },
+  
+  
+    "Metadata" : {
+      "AWS::CloudFormation::Interface" : {
+        "ParameterGroups" : [
+          {
+            "Label" : { "default" : "Source Oracle Database Configuration" },
+            "Parameters" : [ "OracleDBName", "OracleDBUsername", "OracleDBPassword" ]
+          },
+          {
+            "Label" : { "default" : "Enter IP address for DB Security group Configuration" },
+            "Parameters" : [ "ClientIP" ]
+          }
+        ]
+  
+      }
+    },
+  
+    "Mappings": {
+  
+        "OracleRDSInstanceType" : {
+          "us-east-1"  : {"inst" : "db.m3.medium"},
+          "us-west-1"  :  {"inst" : "db.m3.medium"},
+          "us-west-2" : {"inst" : "db.m3.medium"},
+          "ap-northeast-1" : {"inst" : "db.m3.medium"},
+          "ap-northeast-2" :  {"inst" : "db.t2.medium"},
+          "ap-southeast-1" : {"inst" : "db.m3.medium"},
+          "ap-southeast-2" :  {"inst" : "db.m3.medium"},
+          "eu-west-1" :  {"inst" : "db.m3.medium"},
+           "eu-central-1"  :  {"inst" : "db.m3.medium"},
+           "sa-east-1" :  {"inst" : "db.m3.medium"},
+           "us-gov-west-1" :  {"inst" : "db.m3.medium"},
+           "ap-south-1" :  {"inst" : "db.t2.medium"}
+          },
+  
+          "OracleEngineVersion" : {
+            "us-east-1"  : {"ver" : "12.1.0.2.v4"},
+            "us-west-1"  :  {"ver" : "12.1.0.2.v4"},
+            "us-west-2" : {"ver" : "12.1.0.2.v4"},
+            "ap-northeast-1" : {"ver" : "12.1.0.2.v4"},
+            "ap-northeast-2" :  {"ver" : "12.1.0.2.v4"},
+            "ap-southeast-1" : {"ver" : "12.1.0.2.v4"},
+            "ap-southeast-2" :  {"ver" : "12.1.0.2.v4"},
+            "eu-west-1" :  {"ver" : "12.1.0.2.v4"},
+             "eu-central-1"  :  {"ver" : "12.1.0.2.v4"},
+             "sa-east-1" :  {"ver" : "12.1.0.2.v4"},
+             "us-gov-west-1" :  {"ver" : "12.1.0.2.v4"},
+             "ap-south-1" :  {"ver" : "12.1.0.2.v4"}
+              }
+            },
+
+    "Resources" : {
+   
+      "MyDBSubnetGroup" : {
+        "Type" : "AWS::RDS::DBSubnetGroup",
+        "Properties" : {
+          "DBSubnetGroupDescription" : "Subnet available for the DMS Demo RDS DB Instance",
+          "SubnetIds" : { "Ref" : "SubnetId" }
+        }
+      },
+  
+      "myVPCSecurityGroup" : {
+          "Type" : "AWS::EC2::SecurityGroup",
+          "Properties" :
+          {
+            "GroupDescription" : "Security group for DMS Demo RDS DB Instances.",
+            "VpcId" : { "Ref" : "VpcId" },
+          "SecurityGroupIngress" : [
+             {
+            "IpProtocol" : "tcp",
+            "FromPort" : "1521",
+            "ToPort" : "1521",
+            "CidrIp" : { "Ref" : "ClientIP"}
+          },{
+            "IpProtocol" : "tcp",
+            "FromPort" : "1521",
+            "ToPort" : "1521",
+            "CidrIp" : {"Ref" : "VPCCidr"}
+          }]
+              }
+      },
+  
+      "OracleDB" : {
+        "Type" : "AWS::RDS::DBInstance",
+        "Properties" : {
+          "DBName" : { "Ref" : "OracleDBName" },
+          "AllocatedStorage" : "10",
+          "MasterUsername" : { "Ref" : "OracleDBUsername" },
+          "MasterUserPassword" : { "Ref" : "OracleDBPassword" },
+          "DBInstanceClass" : {"Fn::FindInMap" : [ "OracleRDSInstanceType", { "Ref" : "AWS::Region" }, "inst" ]},
+          "Engine" : "oracle-se2",
+          "EngineVersion" : {"Fn::FindInMap" : [ "OracleEngineVersion", { "Ref" : "AWS::Region" }, "ver" ]},
+          "LicenseModel"  : "license-included",
+          "PubliclyAccessible" : "true",
+          "AvailabilityZone" :{"Fn::Select" : [ 0,  { "Fn::GetAZs" : { "Ref" : "AWS::Region" } }] },
+           "MultiAZ" : "false",
+           "StorageEncrypted" : "true",
+          "DBSubnetGroupName" : { "Ref" : "MyDBSubnetGroup" },
+          "VPCSecurityGroups" : [ { "Ref" : "myVPCSecurityGroup" }  ],
+           "StorageType"  : "gp2",
+          "Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ]
+        }
+      }
+    },
+    "Outputs" : {
+        "StackName" : { "Value" : { "Ref" : "AWS::StackName" } },
+        "Regionname" : { "Value" : { "Ref" : "AWS::Region" } },
+        "OracleJDBCConnectionString": {
+            "Description" : "JDBC connection string for Oracle database",
+            "Value" : { "Fn::Join": [ "", [ "jdbc:oracle:thin:@",
+                                            { "Fn::GetAtt": [ "OracleDB", "Endpoint.Address" ] },
+                                            ":",
+                                            { "Fn::GetAtt": [ "OracleDB", "Endpoint.Port" ] },
+                                            ":",
+                                            { "Ref": "OracleDBName" }]]}
+        }
+    }
+}
+  

@@ -1,23 +1,22 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-  Stelligent CloudFormation Sample Template ** This template creates one or more
-  Amazon resources. You will be billed for the AWS resources used if you create
-  a stack from this template.
+  Creates a new ECR Repository
 Parameters:
+  RepositoryName:
+    Type: String
+    Default: ecrrepo
+    Description: A name for the ECR repository
   EnvironmentName:
     Type: String
     Default: MyApplicationDev
     Description: A name for the environment that this cloudformation will be part of.
                  Used to locate other resources in the same environment.
-  # IAMARN:
-  #   Type: String
-  #   Description: >-
-  #     Use the full ARN for the IAM user to grant access (ECS Role ARN) (e.g. arn:aws:iam::123456789012:user/patrick.henry)
+ 
 Resources:
   MyRepository:
     Type: 'AWS::ECR::Repository'
     Properties:
-      RepositoryName: !Ref 'AWS::StackName'
+      RepositoryName: !Ref 'RepositoryName'
       RepositoryPolicyText:
         Version: 2008-10-17
         Statement:

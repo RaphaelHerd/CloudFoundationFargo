@@ -10,6 +10,10 @@ Parameters:
     Type: String
     Default: MyApplicationService
     Description: A name for the service
+  ContainerImageFullName:
+    Type: String
+    Default: httpd:2.4
+    Description: The full name of the container image to be deployed
   ContainerPort:
     Type: Number
     Default: 80
@@ -78,41 +82,15 @@ Resources:
         Cpu: 10
         Memory: 200
         Essential: 'true'
-        Image: 581077101053.dkr.ecr.us-east-1.amazonaws.com/ecs-app1-ecr-repository:httpd24
+        Image: !Ref 'ContainerImageFullName'
         LogConfiguration:
           LogDriver: 'awslogs'
           Options:
             awslogs-group: !Join ['-', [!Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
             awslogs-region: !Ref 'AWS::Region'
             awslogs-stream-prefix: !Ref 'ServiceName'
-        MountPoints:
-        - ContainerPath: /usr/local/apache2/htdocs
-          SourceVolume: my-vol
         PortMappings:
         - ContainerPort: !Ref 'ContainerPort'
-      - Name: busybox
-        Cpu: 10
-        Command: ['/bin/sh -c "while true; do echo ''<html> <head> <title>Amazon ECS
-            Sample App</title> <style>body {margin-top: 40px; background-color: #333;}
-            </style> </head><body> <div style=color:white;text-align:center> <h1>Amazon
-            ECS Sample App</h1> <h2>Congratulations!</h2> <p>Your application is now
-            running on a container in Amazon ECS.</p>'' > top; /bin/date > date ;
-            echo ''</div></body></html>'' > bottom; cat top date bottom > /usr/local/apache2/htdocs/index.html
-            ; sleep 1; done"']
-        EntryPoint: [sh, -c]
-        Essential: false
-        Image: 581077101053.dkr.ecr.us-east-1.amazonaws.com/ecs-app1-ecr-repository:busybox
-        Memory: 200
-        LogConfiguration:
-          LogDriver: awslogs
-          Options:
-            awslogs-group: !Join ['-', [!Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
-            awslogs-region: !Ref 'AWS::Region'
-            awslogs-stream-prefix: !Ref 'ServiceName'
-        VolumesFrom:
-        - SourceContainer: !Ref 'ServiceName'
-      Volumes:
-      - Name: my-vol
 
   # The service. The service is a resource which allows you to run multiple
   # copies of a type of task, and gather up their logs and metrics, as well
